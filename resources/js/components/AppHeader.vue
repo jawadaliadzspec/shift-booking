@@ -5,33 +5,16 @@ import Breadcrumbs from '@/components/Breadcrumbs.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuTrigger,
+    DropdownMenu, DropdownMenuContent, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-    NavigationMenu,
-    NavigationMenuItem,
-    NavigationMenuList,
-    navigationMenuTriggerStyle,
+    NavigationMenu, NavigationMenuItem, NavigationMenuList, navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
-import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-} from '@/components/ui/sheet';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import UserMenuContent from '@/components/UserMenuContent.vue';
 import { getInitials } from '@/composables/useInitials';
 import { toUrl, urlIsActive } from '@/lib/utils';
-import { dashboard } from '@/routes';
 import type { BreadcrumbItem, NavItem } from '@/types';
 import { InertiaLinkProps, Link, usePage } from '@inertiajs/vue3';
 import { BookOpen, Folder, LayoutGrid, Menu, Search, Users, User } from 'lucide-vue-next';
@@ -40,19 +23,14 @@ import { computed } from 'vue';
 interface Props {
     breadcrumbs?: BreadcrumbItem[];
 }
-
-const props = withDefaults(defineProps<Props>(), {
-    breadcrumbs: () => [],
-});
+const props = withDefaults(defineProps<Props>(), { breadcrumbs: () => [] });
 
 const page = usePage();
 const auth = computed(() => page.props.auth);
 
 const isCurrentRoute = computed(
-    () => (url: NonNullable<InertiaLinkProps['href']>) =>
-        urlIsActive(url, page.url),
+    () => (url: NonNullable<InertiaLinkProps['href']>) => urlIsActive(url, page.url),
 );
-
 const activeItemStyles = computed(
     () => (url: NonNullable<InertiaLinkProps['href']>) =>
         isCurrentRoute.value(toUrl(url))
@@ -60,32 +38,35 @@ const activeItemStyles = computed(
             : '',
 );
 
-const mainNavItems: NavItem[] = [
-    // {
-    //     title: 'Dashboard',
-    //     href: dashboard(),
-    //     icon: LayoutGrid,
-    // },
-    {
-        title: 'Shifts',
-        href: '/shifts',
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Employees',
-        href: '/employees',
-        icon: Users,
-    },
-    {
-        title: 'Customers',
-        href: '/customers',
-        icon: User,
-    },
-];
+const NAV_ITEMS: Record<string, NavItem> = {
+    shifts:     { title: 'Shifts',     href: '/shifts',    icon: LayoutGrid },
+    employees:  { title: 'Employees',  href: '/employees', icon: Users },
+    customers:  { title: 'Customers',  href: '/customers', icon: User },
+};
+
+type UserRole = 'admin' | 'employee' | 'customer' | string;
+
+const ROLE_NAV: Record<UserRole, Array<keyof typeof NAV_ITEMS>> = {
+    admin:    ['shifts', 'employees', 'customers'],
+    employee: ['shifts'],
+    customer: ['shifts'],
+    // Fallback for unknown roles:
+    default:  ['shifts'],
+};
+
+// 3) Build the nav for the current user based on role
+const userRole = computed<UserRole>(() => auth.value?.user?.user_type ?? 'default');
+
+const mainNavItems = computed<NavItem[]>(() => {
+    const keys = ROLE_NAV[userRole.value] ?? ROLE_NAV.default;
+    return keys.map(k => NAV_ITEMS[k]);
+});
 
 const rightNavItems: NavItem[] = [
+    // { title: 'Docs', href: 'https://yourdocs', icon: BookOpen },
 ];
 </script>
+
 
 <template>
     <div>

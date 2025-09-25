@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -32,5 +33,17 @@ class Shift extends Model
     public function employee()
     {
         return $this->belongsTo(User::class, 'employee_id');
+    }
+    protected function startTime(): Attribute
+    {
+        return Attribute::make(
+            get: fn($value) => $value ? substr($value, 0, 5) : $value,
+        );
+    }
+    protected function endTime(): Attribute
+    {
+        return Attribute::make(
+            get: fn($value) => $value ? substr($value, 0, 5) : $value,
+        );
     }
 }

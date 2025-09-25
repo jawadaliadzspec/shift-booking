@@ -3,17 +3,19 @@ import { useForm } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import type { ShiftLite, UserLite } from '@/types/shifts';
 
-type UserLite = { id: number; name: string; email: string };
-type ShiftLite = {
-    id: number;
-    date: string;
-    start_time: string;
-    end_time: string;
-    service: string;
-    customer: { id: number; name: string; email: string };
-    employee: { id: number; name: string; email: string };
-};
+// type UserLite = { id: number; name: string; email: string };
+// type ShiftLite = {
+//     id: number;
+//     date: string;
+//     start_time: string;
+//     end_time: string;
+//     service: string;
+//     customer: { id: number; name: string; email: string };
+//     employee: { id: number; name: string; email: string };
+//     status: string;
+// };
 
 const props = withDefaults(defineProps<{
     mode: 'create' | 'edit';

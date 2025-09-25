@@ -20,7 +20,7 @@ import { ref } from 'vue';
 
 type Customer = {
     id: number;
-    full_name: string;
+    name: string;
     email: string;
     phone: string | null;
 };
@@ -92,7 +92,7 @@ const deleteCustomer = () => {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Full Name</TableHead>
+                            <TableHead>Name</TableHead>
                             <TableHead>Email</TableHead>
                             <TableHead>Phone</TableHead>
                             <TableHead class="w-[140px]">Actions</TableHead>
@@ -100,7 +100,7 @@ const deleteCustomer = () => {
                     </TableHeader>
                     <TableBody>
                         <TableRow v-for="customer in props.customers" :key="customer.id">
-                            <TableCell>{{ customer.full_name }}</TableCell>
+                            <TableCell>{{ customer.name }}</TableCell>
                             <TableCell>{{ customer.email }}</TableCell>
                             <TableCell>{{ customer.phone || 'N/A' }}</TableCell>
                             <TableCell>

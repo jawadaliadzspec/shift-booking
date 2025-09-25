@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 
 type Customer = {
     id: number;
-    full_name: string;
+    name: string;
     email: string;
     phone: string | null;
 };
@@ -24,7 +24,7 @@ const emit = defineEmits<{
 }>();
 
 const form = useForm({
-    full_name: props.customer?.full_name ?? '',
+    name: props.customer?.name ?? '',
     email: props.customer?.email ?? '',
     phone: props.customer?.phone ?? '',
     password: '',
@@ -58,12 +58,12 @@ const clearPassword = () => {
                 <Label for="full_name">Full Name</Label>
                 <Input
                     id="full_name"
-                    v-model="form.full_name"
+                    v-model="form.name"
                     type="text"
                     placeholder="Enter full name"
-                    :class="{ 'border-destructive': !!form.errors.full_name }"
+                    :class="{ 'border-destructive': !!form.errors.name }"
                 />
-                <p v-if="form.errors.full_name" class="text-destructive text-sm">{{ form.errors.full_name }}</p>
+                <p v-if="form.errors.name" class="text-destructive text-sm">{{ form.errors.name }}</p>
             </div>
 
             <div class="flex flex-col space-y-2">
