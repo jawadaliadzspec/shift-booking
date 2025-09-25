@@ -8,7 +8,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::get('dashboard', function () {
-    return Inertia::render('Dashboard');
+    return redirect('/shifts');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -27,6 +27,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/customers/{user}/edit', [\App\Http\Controllers\CustomerController::class, 'edit'])->name('customers.edit');
     Route::put('/customers/{user}', [\App\Http\Controllers\CustomerController::class, 'update'])->name('customers.update');
     Route::delete('/customers/{user}', [\App\Http\Controllers\CustomerController::class, 'destroy'])->name('customers.destroy');
+    // Shifts
+    Route::get('/shifts', [\App\Http\Controllers\ShiftController::class, 'index'])->name('shifts.index');
+    Route::get('/shifts/create', [\App\Http\Controllers\ShiftController::class, 'create'])->name('shifts.create');
+    Route::post('/shifts', [\App\Http\Controllers\ShiftController::class, 'store'])->name('shifts.store');
+    Route::get('/shifts/{shift}/edit', [\App\Http\Controllers\ShiftController::class, 'edit'])->name('shifts.edit');
+    Route::put('/shifts/{shift}', [\App\Http\Controllers\ShiftController::class, 'update'])->name('shifts.update');
+    Route::delete('/shifts/{shift}', [\App\Http\Controllers\ShiftController::class, 'destroy'])->name('shifts.destroy');
 });
 
 require __DIR__.'/settings.php';
