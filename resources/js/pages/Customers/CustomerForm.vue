@@ -9,6 +9,7 @@ type Customer = {
     name: string;
     email: string;
     phone: string | null;
+    hourly_rate: number | null;
 };
 
 const props = withDefaults(defineProps<{
@@ -27,6 +28,7 @@ const form = useForm({
     name: props.customer?.name ?? '',
     email: props.customer?.email ?? '',
     phone: props.customer?.phone ?? '',
+    hourly_rate: props.customer?.hourly_rate ?? '',
     password: '',
     password_confirmation: '',
 });
@@ -91,30 +93,34 @@ const clearPassword = () => {
             </div>
 
             <div class="flex flex-col space-y-2">
-                <Label for="password">{{ props.mode === 'create' ? 'Password' : 'New Password (optional)' }}</Label>
-                <Input
-                    id="password"
-                    v-model="form.password"
-                    type="password"
-                    :placeholder="props.mode === 'create' ? 'Enter password' : 'Leave blank to keep current'"
-                    :class="{ 'border-destructive': !!form.errors.password }"
-                />
-                <p v-if="form.errors.password" class="text-destructive text-sm">{{ form.errors.password }}</p>
+                <Label for="hourly_rate">Hourly Rate</Label>
+                <Input id="hourly_rate" v-model="form.hourly_rate" type="number" placeholder="Enter hourly rate" />
             </div>
+<!--            <div class="flex flex-col space-y-2">-->
+<!--                <Label for="password">{{ props.mode === 'create' ? 'Password' : 'New Password (optional)' }}</Label>-->
+<!--                <Input-->
+<!--                    id="password"-->
+<!--                    v-model="form.password"-->
+<!--                    type="password"-->
+<!--                    :placeholder="props.mode === 'create' ? 'Enter password' : 'Leave blank to keep current'"-->
+<!--                    :class="{ 'border-destructive': !!form.errors.password }"-->
+<!--                />-->
+<!--                <p v-if="form.errors.password" class="text-destructive text-sm">{{ form.errors.password }}</p>-->
+<!--            </div>-->
 
-            <div class="flex flex-col space-y-2">
-                <Label for="password_confirmation">Confirm Password</Label>
-                <Input
-                    id="password_confirmation"
-                    v-model="form.password_confirmation"
-                    type="password"
-                    placeholder="Confirm password"
-                    :class="{ 'border-destructive': !!form.errors.password_confirmation }"
-                />
-                <p v-if="form.errors.password_confirmation" class="text-destructive text-sm">
-                    {{ form.errors.password_confirmation }}
-                </p>
-            </div>
+<!--            <div class="flex flex-col space-y-2">-->
+<!--                <Label for="password_confirmation">Confirm Password</Label>-->
+<!--                <Input-->
+<!--                    id="password_confirmation"-->
+<!--                    v-model="form.password_confirmation"-->
+<!--                    type="password"-->
+<!--                    placeholder="Confirm password"-->
+<!--                    :class="{ 'border-destructive': !!form.errors.password_confirmation }"-->
+<!--                />-->
+<!--                <p v-if="form.errors.password_confirmation" class="text-destructive text-sm">-->
+<!--                    {{ form.errors.password_confirmation }}-->
+<!--                </p>-->
+<!--            </div>-->
         </div>
 
         <div class="flex justify-end space-x-3">

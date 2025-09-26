@@ -20,14 +20,16 @@ import { ref } from 'vue';
 
 type Employee = {
     id: number;
-    full_name: string;
+    name: string;
     email: string;
     phone: string | null;
     hourly_rate: number | null;
+    customers?: Array<{ id: number; name: string; email: string }>;
 };
 
 const props = defineProps<{
     employees: Employee[];
+    customers: Array<{ id:number; name:string; email:string }>
 }>();
 
 // Create/Edit modal state
@@ -36,8 +38,11 @@ const showEdit = ref(false);
 const selected = ref<Employee | null>(null);
 
 const openCreate = () => { showCreate.value = true; };
-const openEdit = (e: Employee) => {
-    selected.value = e;
+const openEdit = (e: any) => {
+    selected.value = {
+        ...e,
+        customer_ids: (e.customer_ids ?? e.customers?.map((c: any) => c.id) ?? []).map(Number),
+    };
     showEdit.value = true;
 };
 
@@ -102,11 +107,11 @@ const deleteEmployee = () => {
                     </TableHeader>
                     <TableBody>
                         <TableRow v-for="employee in props.employees" :key="employee.id">
-                            <TableCell>{{ employee.full_name }}</TableCell>
+                            <TableCell>{{ employee.name }}</TableCell>
                             <TableCell>{{ employee.email }}</TableCell>
                             <TableCell>{{ employee.phone || 'N/A' }}</TableCell>
                             <TableCell>
-                                {{ employee.hourly_rate !== null ? `$${employee.hourly_rate}` : 'N/A' }}
+                                {{ employee.hourly_rate !== null ? `${employee.hourly_rate}` : 'N/A' }}
                             </TableCell>
                             <TableCell>
                                 <div class="flex space-x-2">
@@ -135,7 +140,7 @@ const deleteEmployee = () => {
                     <DialogTitle>Create Employee</DialogTitle>
                     <DialogDescription>Fill in the details to add a new employee.</DialogDescription>
                 </DialogHeader>
-                <EmployeeForm mode="create" @cancel="showCreate = false" @saved="onSaved" />
+                <EmployeeForm mode="create" :customers="props.customers" @cancel="showCreate = false" @saved="onSaved" />
             </DialogContent>
         </Dialog>
 
@@ -146,12 +151,22 @@ const deleteEmployee = () => {
                     <DialogTitle>Edit Employee</DialogTitle>
                     <DialogDescription>Update the employee details.</DialogDescription>
                 </DialogHeader>
+<!--                <EmployeeForm-->
+<!--                    v-if="selected"-->
+<!--                    mode="edit"-->
+<!--                    :employee="selected"-->
+<!--                    :customers="props.customers"-->
+<!--                    @cancel="showEdit = false"-->
+<!--                    @saved="onSaved"-->
+<!--                />-->
                 <EmployeeForm
                     v-if="selected"
-                    mode="edit"
-                    :employee="selected"
-                    @cancel="showEdit = false"
-                    @saved="onSaved"
+                    :key="selected.id"
+                mode="edit"
+                :employee="selected"
+                :customers="props.customers"
+                @cancel="showEdit = false"
+                @saved="onSaved"
                 />
             </DialogContent>
         </Dialog>

@@ -23,7 +23,6 @@ class User extends Authenticatable
         'email',
         'password',
         'user_type',
-        'full_name',
         'hourly_rate',
         'phone',
     ];
@@ -50,5 +49,19 @@ class User extends Authenticatable
             'password' => 'hashed',
             'hourly_rate' => 'decimal:2',
         ];
+    }
+
+    public function customers()
+    {
+        // for employees → customers
+        return $this->belongsToMany(User::class, 'customer_employee', 'employee_id', 'customer_id')
+            ->withTimestamps();
+    }
+
+    public function employees()
+    {
+        // for customers → employees
+        return $this->belongsToMany(User::class, 'customer_employee', 'customer_id', 'employee_id')
+            ->withTimestamps();
     }
 }

@@ -8,7 +8,8 @@ import { Plus } from 'lucide-vue-next';
 type UserRole = 'admin' | 'employee' | 'customer' | string;
 
 type Filters = {
-    date: string;
+    date_from: string;
+    date_to: string;
     service: string;
     customer_id: number | '' | null;
     employee_id: number | '' | null;
@@ -19,7 +20,8 @@ const props = defineProps<{
     role: UserRole;
     customers: UserLite[];
     employees: UserLite[];
-    initial?: Partial<Filters>;
+    // keep legacy single-date for prefill only
+    initial?: Partial<Filters> & { date?: string };
 }>();
 
 const emit = defineEmits<{
@@ -30,51 +32,58 @@ const emit = defineEmits<{
 const show = ref(false);
 
 const filters = ref<Filters>({
-    date: '',
+    date_from: '',
+    date_to: '',
     service: '',
     customer_id: '',
     employee_id: '',
     status: '',
 });
 
-// Prefill from initial
+// Prefill from initial (handles legacy `date`)
 watchEffect(() => {
     if (!props.initial) return;
-    filters.value.date = props.initial.date ?? '';
-    filters.value.service = props.initial.service ?? '';
-    filters.value.customer_id = (props.initial.customer_id ?? '') as any;
-    filters.value.employee_id = (props.initial.employee_id ?? '') as any;
-    filters.value.status = props.initial.status ?? '';
+console.log( props.initial)
+    filters.value.date_from = props.initial.date_from ?? '';
+    filters.value.date_to   = props.initial.date_to   ?? '';
+
+    // Legacy: if `initial.date` exists and range not set, use it for both ends
+    if (props.initial.date && !filters.value.date_from && !filters.value.date_to) {
+        filters.value.date_from = props.initial.date;
+        filters.value.date_to   = props.initial.date;
+    }
+
+    filters.value.service      = props.initial.service ?? '';
+    filters.value.customer_id  = (props.initial.customer_id ?? '') as any;
+    filters.value.employee_id  = (props.initial.employee_id ?? '') as any;
+    filters.value.status       = props.initial.status ?? '';
 });
 
-// 1) Define a safe key union
+// Role-based visibility
 type RoleKey = 'admin' | 'customer' | 'employee' | 'default';
 
-// 2) Make ROLE_FILTERS strongly typed
 const ROLE_FILTERS = {
-    admin:    ['date','service','customer_id','employee_id','status'],
-    customer: ['date','service','employee_id','status'],
-    employee: ['date','service','customer_id','status'],
-    default:  ['date','service','status'],
+    admin:    ['date_from','date_to','service','customer_id','employee_id','status'],
+    customer: ['date_from','date_to','service','employee_id','status'],
+    employee: ['date_from','date_to','service','customer_id','status'],
+    default:  ['date_from','date_to','service','status'],
 } as const satisfies Record<RoleKey, readonly (keyof Filters)[]>;
 
-// 3) Type guard / normalizer for props.role
 function toRoleKey(r: unknown): RoleKey {
     return r === 'admin' || r === 'customer' || r === 'employee' ? r : 'default';
 }
 
-// 4) Compute a safe key, then index
 const roleKey = computed<RoleKey>(() => toRoleKey(props.role));
 const visible = computed(() => ROLE_FILTERS[roleKey.value]);
-const showField = (k:any) => visible.value.includes(k);
-// Static service options
+const showField = (k: keyof Filters) => visible.value.includes(k);
+
+// Options
 const serviceOptions = [
     { label: 'All', value: '' },
     { label: 'Massor', value: 'Massor' },
     { label: 'Hudterapeut', value: 'Hudterapeut' },
 ];
 
-// Status options
 const statusOptions = [
     { label: 'All', value: '' },
     { label: 'Open', value: 'open' },
@@ -83,10 +92,21 @@ const statusOptions = [
     { label: 'Cancel', value: 'cancel' },
 ];
 
+// Helpers
+function normalizeRange() {
+    const { date_from, date_to } = filters.value;
+    if (date_from && date_to && date_from > date_to) {
+        [filters.value.date_from, filters.value.date_to] = [date_to, date_from];
+    }
+}
+
 // Actions
 const apply = () => {
+    normalizeRange();
+
     const q: Partial<Filters> = {};
-    if (filters.value.date) q.date = filters.value.date;
+    if (showField('date_from') && filters.value.date_from) q.date_from = filters.value.date_from;
+    if (showField('date_to')   && filters.value.date_to)   q.date_to   = filters.value.date_to;
     if (filters.value.service) q.service = filters.value.service;
     if (showField('customer_id') && filters.value.customer_id) q.customer_id = filters.value.customer_id;
     if (showField('employee_id') && filters.value.employee_id) q.employee_id = filters.value.employee_id;
@@ -97,7 +117,7 @@ const apply = () => {
 };
 
 const clear = () => {
-    filters.value = { date: '', service: '', customer_id: '', employee_id: '', status: '' };
+    filters.value = { date_from: '', date_to: '', service: '', customer_id: '', employee_id: '', status: '' };
     emit('clear');
     show.value = false;
 };
@@ -105,7 +125,7 @@ const clear = () => {
 
 <template>
     <div>
-        <Button  @click="show = true"><Plus class="mr-2 h-4 w-4" />Filters</Button>
+        <Button @click="show = true"><Plus class="mr-2 h-4 w-4" />Filters</Button>
 
         <Dialog :open="show" @update:open="val => (show = val)">
             <DialogContent class="max-w-xl">
@@ -115,9 +135,25 @@ const clear = () => {
                 </DialogHeader>
 
                 <div class="grid gap-3">
-                    <div v-if="showField('date')">
-                        <label class="block text-sm font-medium mb-1">Date</label>
-                        <input type="date" v-model="filters.date" class="w-full rounded-md border px-3 py-2 bg-background" />
+                    <!-- Start / End Date (two inputs) -->
+                    <div v-if="showField('date_from') || showField('date_to')">
+                        <label class="block text-sm font-medium mb-1">Date range</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <input
+                                v-if="showField('date_from')"
+                                type="date"
+                                v-model="filters.date_from"
+                                class="w-full rounded-md border px-3 py-2 bg-background"
+                                placeholder="Start date"
+                            />
+                            <input
+                                v-if="showField('date_to')"
+                                type="date"
+                                v-model="filters.date_to"
+                                class="w-full rounded-md border px-3 py-2 bg-background"
+                                placeholder="End date"
+                            />
+                        </div>
                     </div>
 
                     <div v-if="showField('service')">

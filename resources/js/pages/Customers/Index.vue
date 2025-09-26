@@ -23,6 +23,7 @@ type Customer = {
     name: string;
     email: string;
     phone: string | null;
+    hourly_rate: number | null;
 };
 
 const props = defineProps<{
@@ -95,6 +96,7 @@ const deleteCustomer = () => {
                             <TableHead>Name</TableHead>
                             <TableHead>Email</TableHead>
                             <TableHead>Phone</TableHead>
+                            <TableHead>Hourly Rate</TableHead>
                             <TableHead class="w-[140px]">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -103,6 +105,9 @@ const deleteCustomer = () => {
                             <TableCell>{{ customer.name }}</TableCell>
                             <TableCell>{{ customer.email }}</TableCell>
                             <TableCell>{{ customer.phone || 'N/A' }}</TableCell>
+                            <TableCell>
+                                {{ customer.hourly_rate !== null ? `${customer.hourly_rate}` : 'N/A' }}
+                            </TableCell>
                             <TableCell>
                                 <div class="flex space-x-2">
                                     <Button variant="outline" size="sm" @click="openEdit(customer)">

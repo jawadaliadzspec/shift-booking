@@ -111,7 +111,8 @@ const initialFilters = computed(() => {
     const out: Record<string, any> = {};
     try {
         const u = new URL(window.location.href);
-        out.date = u.searchParams.get('date') ?? '';
+        out.date_from = u.searchParams.get('date_from') ?? '';
+        out.date_to = u.searchParams.get('date_to') ?? '';
         out.service = u.searchParams.get('service') ?? '';
         out.customer_id = u.searchParams.get('customer_id') ?? '';
         out.employee_id = u.searchParams.get('employee_id') ?? '';

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Shift;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -14,44 +15,75 @@ class ShiftController extends Controller
     {
         $user = $request->user();
 
-        // --- Validate incoming filters (fixed services + known statuses) ---
+        // --- Validate incoming filters (range + legacy single date) ---
         $filters = $request->validate([
-            'date'        => ['nullable','date'],
+            'date_from'   => ['nullable', 'date'],
+            'date_to'     => ['nullable', 'date'],
+            'date'        => ['nullable', 'date'], // legacy (if provided, we map to from/to)
             'service'     => ['nullable','in:Massor,Hudterapeut'],
             'status'      => ['nullable','in:open,booked,completed,cancel'],
             'customer_id' => ['nullable','integer','exists:users,id'],
             'employee_id' => ['nullable','integer','exists:users,id'],
         ]);
 
-        // --- Enforce role scoping (ignore conflicting filters from client) ---
+        // --- Normalize legacy single date -> range ---
+        if (!empty($filters['date']) && empty($filters['date_from']) && empty($filters['date_to'])) {
+            $filters['date_from'] = $filters['date'];
+            $filters['date_to']   = $filters['date'];
+        }
+        unset($filters['date']); // keep logic clean below
+
+        // --- Normalize range order if swapped ---
+        if (!empty($filters['date_from']) && !empty($filters['date_to'])) {
+            if ($filters['date_from'] > $filters['date_to']) {
+                [$filters['date_from'], $filters['date_to']] = [$filters['date_to'], $filters['date_from']];
+            }
+        }
+
+        // --- Enforce role scoping (server always authoritative) ---
         if ($user->user_type === 'customer') {
             $filters['customer_id'] = $user->id;
-            unset($filters['employee_id']); // customer cannot scope by another employee in backend
+            unset($filters['employee_id']);
         } elseif ($user->user_type === 'employee') {
             $filters['employee_id'] = $user->id;
-            unset($filters['customer_id']); // employee cannot scope by another customer in backend
+            unset($filters['customer_id']);
         }
 
         // --- Base query ---
         $query = Shift::with(['customer:id,name,email', 'employee:id,name,email'])
             ->latest('date');
 
-        // --- Apply filters if present ---
+        // --- Apply filters ---
         $query
-            ->when(!empty($filters['date']),        fn($q) => $q->whereDate('date', $filters['date']))
+            // Date range (inclusive)
+            ->when(!empty($filters['date_from']) && !empty($filters['date_to']), function ($q) use ($filters) {
+                $from = Carbon::parse($filters['date_from'])->startOfDay();
+                $to   = Carbon::parse($filters['date_to'])->endOfDay();
+                $q->whereBetween('date', [$from, $to]);
+            })
+            // Only from
+            ->when(!empty($filters['date_from']) && empty($filters['date_to']), function ($q) use ($filters) {
+                $from = Carbon::parse($filters['date_from'])->startOfDay();
+                $q->where('date', '>=', $from);
+            })
+            // Only to
+            ->when(empty($filters['date_from']) && !empty($filters['date_to']), function ($q) use ($filters) {
+                $to = Carbon::parse($filters['date_to'])->endOfDay();
+                $q->where('date', '<=', $to);
+            })
             ->when(!empty($filters['service']),     fn($q) => $q->where('service', $filters['service']))
-            ->when(!empty($filters['status']),      fn($q) => $q->where('status', $filters['status']))
+            ->when(!empty($filters['status']),      fn($q) => $q->where('status',  $filters['status']))
             ->when(!empty($filters['customer_id']), fn($q) => $q->where('customer_id', $filters['customer_id']))
             ->when(!empty($filters['employee_id']), fn($q) => $q->where('employee_id', $filters['employee_id']));
 
         $rows = $query->get();
 
-        // --- Map for frontend (customer/employee as null when missing) ---
+        // --- Map for frontend ---
         $shifts = $rows->map(function ($s) {
             return [
                 'id'         => $s->id,
                 'date'       => optional($s->date)->toDateString(),
-                'start_time' => $s->start_time, // "HH:mm" (ensure accessor/DB consistency)
+                'start_time' => $s->start_time,
                 'end_time'   => $s->end_time,
                 'service'    => $s->service,
                 'status'     => $s->status,
@@ -64,30 +96,25 @@ class ShiftController extends Controller
             ];
         });
 
-        // --- Dropdown sources (limit by role as needed) ---
-        // Admin sees both lists; customers only need employees; employees only need customers.
-        $customers = User::select('id','name','email')
-            ->when($user->user_type !== 'employee' && $user->user_type !== 'admin', fn($q) => $q->whereRaw('1=0')) // hide for customer
-            ->when($user->user_type !== 'customer' && $user->user_type !== 'admin', fn($q) => $q)                 // show for employee/admin
-            ->where('user_type','customer')
-            ->orderBy('name')
-            ->get();
+        // --- Dropdown sources (role-aware) ---
+        $customers = in_array($user->user_type, ['admin','employee'])
+            ? User::select('id','name','email')->where('user_type','customer')->orderBy('name')->get()
+            : collect();
 
-        $employees = User::select('id','name','email')
-            ->when($user->user_type !== 'customer' && $user->user_type !== 'admin', fn($q) => $q->whereRaw('1=0')) // hide for employee
-            ->where('user_type','employee')
-            ->orderBy('name')
-            ->get();
+        $employees = in_array($user->user_type, ['admin','customer'])
+            ? User::select('id','name','email')->where('user_type','employee')->orderBy('name')->get()
+            : collect();
 
-        // Return applied filters so UI can prefill the modal
+        // --- Return (prefill new range fields) ---
         return Inertia::render('shifts/Index', [
             'shifts'    => $shifts,
             'customers' => $customers,
             'employees' => $employees,
             'filters'   => [
-                'date'        => $filters['date']        ?? '',
-                'service'     => $filters['service']     ?? '',
-                'status'      => $filters['status']      ?? '',
+                'date_from'   => $filters['date_from'] ?? '',
+                'date_to'     => $filters['date_to']   ?? '',
+                'service'     => $filters['service']   ?? '',
+                'status'      => $filters['status']    ?? '',
                 'customer_id' => $filters['customer_id'] ?? '',
                 'employee_id' => $filters['employee_id'] ?? '',
             ],

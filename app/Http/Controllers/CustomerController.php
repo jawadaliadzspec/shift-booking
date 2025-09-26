@@ -41,7 +41,8 @@ class CustomerController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone' => 'nullable|string|max:20',
-            'password' => 'required|string|min:8|confirmed',
+            'hourly_rate' => 'nullable|numeric|min:0',
+//            'password' => 'required|string|min:8|confirmed',
         ]);
 
         User::create(array_merge($validated, [
@@ -73,7 +74,8 @@ class CustomerController extends Controller
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'phone' => 'nullable|string|max:20',
-            'password' => 'nullable|string|min:8|confirmed',
+            'hourly_rate' => 'nullable|numeric|min:0',
+//            'password' => 'nullable|string|min:8|confirmed',
         ]);
 
         $user->update(array_merge($validated, [

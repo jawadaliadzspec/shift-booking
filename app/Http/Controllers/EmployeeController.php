@@ -15,21 +15,18 @@ class EmployeeController extends Controller
 {
     public function index(): Response
     {
-        $employees = User::where('user_type', 'employee')->get();
-
+        $employees = User::where('user_type', 'employee')->with('customers')->get();
+        $customers = User::query()
+            ->where('user_type', 'customer')
+            ->select('id','name','email')
+            ->orderBy('name')
+            ->get();
         return Inertia::render('Employees/Index', [
             'employees' => $employees,
+            'customers' => $customers,
         ]);
     }
 
-    public function create(): Response
-    {
-        if (Auth::user()->user_type !== 'admin') {
-            abort(403);
-        }
-
-        return Inertia::render('Employees/Create');
-    }
 
     public function store(Request $request): RedirectResponse
     {
@@ -38,31 +35,25 @@ class EmployeeController extends Controller
         }
 
         $validated = $request->validate([
-            'full_name' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone' => 'nullable|string|max:20',
             'hourly_rate' => 'nullable|numeric|min:0',
+            'customer_ids' => ['nullable','array'],
+            'customer_ids.*' => ['integer',
+                \Illuminate\Validation\Rule::exists('users','id')->where('user_type','customer')
+            ],
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        User::create(array_merge($validated, [
+        $employee  = User::create(array_merge($validated, [
             'user_type' => 'employee',
-            'password' => bcrypt($validated['password']),
         ]));
+        $employee->customers()->sync($validated['customer_ids'] ?? []);
 
         return redirect()->route('employees.index')->with('success', 'Employee created successfully.');
     }
 
-    public function edit(User $user): Response
-    {
-        if (Auth::user()->user_type !== 'admin' || $user->user_type !== 'employee') {
-            abort(403);
-        }
-
-        return Inertia::render('Employees/Edit', [
-            'employee' => $user,
-        ]);
-    }
 
     public function update(Request $request, User $user): RedirectResponse
     {
@@ -71,16 +62,23 @@ class EmployeeController extends Controller
         }
 
         $validated = $request->validate([
-            'full_name' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'phone' => 'nullable|string|max:20',
             'hourly_rate' => 'nullable|numeric|min:0',
-            'password' => 'nullable|string|min:8|confirmed',
+            'customer_ids' => ['nullable','array'],
+            'customer_ids.*' => ['integer',
+                \Illuminate\Validation\Rule::exists('users','id')->where('user_type','customer')
+            ],
+//            'password' => 'nullable|string|min:8|confirmed',
         ]);
 
-        $user->update(array_merge($validated, [
-            'password' => isset($validated['password']) ? bcrypt($validated['password']) : $user->password,
-        ]));
+        $updateData = $validated;
+        if (isset($validated['password'])) {
+            $updateData['password'] = $validated['password'];
+        }
+        $user->update($updateData);
+        $user->customers()->sync($validated['customer_ids'] ?? []);
 
         return redirect()->route('employees.index')->with('success', 'Employee updated successfully.');
     }
