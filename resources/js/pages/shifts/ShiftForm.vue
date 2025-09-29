@@ -67,8 +67,12 @@ const submit = () => {
 
             <div class="flex flex-col space-y-2">
                 <Label for="service">Service</Label>
-                <Input id="service" v-model="form.service" type="text" placeholder="e.g. Night shift"
-                       :class="{ 'border-destructive': !!form.errors.service }" />
+                <select id="service" v-model="form.service" class="border rounded-md h-10 px-3"
+                        :class="{ 'border-destructive': !!form.errors.service }">
+                    <option value="" disabled>Select service</option>
+                    <option value="massage">Massage</option>
+                    <option value="full massage">Full Massage</option>
+                </select>
                 <p v-if="form.errors.service" class="text-destructive text-sm">{{ form.errors.service }}</p>
             </div>
 
