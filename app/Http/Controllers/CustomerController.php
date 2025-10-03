@@ -47,7 +47,7 @@ class CustomerController extends Controller
 
         User::create(array_merge($validated, [
             'user_type' => 'customer',
-            'password' => bcrypt($validated['password']),
+            'password' => bcrypt('password'),
         ]));
 
         return redirect()->route('customers.index')->with('success', 'Customer created successfully.');
@@ -87,7 +87,7 @@ class CustomerController extends Controller
 
     public function destroy(User $user): RedirectResponse
     {
-        if (Auth::user()->user_type !== 'admin' || $user->user_type !== 'customer') {
+        if (Auth::user()->user_type !== 'admin') {
             abort(403);
         }
 

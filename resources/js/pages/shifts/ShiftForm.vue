@@ -19,6 +19,8 @@ import type { ShiftLite, UserLite } from '@/types/shifts';
 
 const props = withDefaults(defineProps<{
     mode: 'create' | 'edit';
+    role: string;
+    currentUserId: number | undefined;
     shift?: ShiftLite | null;
     customers: UserLite[];
     employees: UserLite[];
@@ -40,6 +42,14 @@ const form = useForm({
     customer_id: props.shift?.customer?.id ?? '',
     employee_id: props.shift?.employee?.id ?? '',
 });
+const userRole = props.role;
+if (props.mode === 'create') {
+    if (props.role === 'customer') {
+        form.customer_id = props.currentUserId ? String(props.currentUserId) : '';
+    } else if (props.role === 'employee') {
+        form.employee_id = props.currentUserId ? String(props.currentUserId) : '';
+    }
+}
 
 const submit = () => {
     if (props.mode === 'create') {
@@ -59,7 +69,7 @@ const submit = () => {
 <template>
     <div class="space-y-8">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="flex flex-col space-y-2">
+            <div  class="flex flex-col space-y-2">
                 <Label for="date">Date</Label>
                 <Input id="date" v-model="form.date" type="date" :class="{ 'border-destructive': !!form.errors.date }" />
                 <p v-if="form.errors.date" class="text-destructive text-sm">{{ form.errors.date }}</p>
@@ -70,8 +80,8 @@ const submit = () => {
                 <select id="service" v-model="form.service" class="border rounded-md h-10 px-3"
                         :class="{ 'border-destructive': !!form.errors.service }">
                     <option value="" disabled>Select service</option>
-                    <option value="massage">Massage</option>
-                    <option value="full massage">Full Massage</option>
+                    <option value="Massor">Massor</option>
+                    <option value="Hudterapeut">Hudterapeut</option>
                 </select>
                 <p v-if="form.errors.service" class="text-destructive text-sm">{{ form.errors.service }}</p>
             </div>
@@ -99,8 +109,7 @@ const submit = () => {
                 <Input id="end_time" v-model="form.end_time" type="time" :class="{ 'border-destructive': !!form.errors.end_time }" />
                 <p v-if="form.errors.end_time" class="text-destructive text-sm">{{ form.errors.end_time }}</p>
             </div>
-
-            <div class="flex flex-col space-y-2">
+            <div v-if="userRole === 'admin'" class="flex flex-col space-y-2">
                 <Label for="customer_id">Customer</Label>
                 <select id="customer_id" v-model="form.customer_id" class="border rounded-md h-10 px-3"
                         :class="{ 'border-destructive': !!form.errors.customer_id }">
@@ -110,7 +119,7 @@ const submit = () => {
                 <p v-if="form.errors.customer_id" class="text-destructive text-sm">{{ form.errors.customer_id }}</p>
             </div>
 
-            <div class="flex flex-col space-y-2">
+            <div v-if="userRole === 'admin'" class="flex flex-col space-y-2">
                 <Label for="employee_id">Employee</Label>
                 <select id="employee_id" v-model="form.employee_id" class="border rounded-md h-10 px-3"
                         :class="{ 'border-destructive': !!form.errors.employee_id }">

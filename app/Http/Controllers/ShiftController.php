@@ -123,13 +123,18 @@ class ShiftController extends Controller
 
     public function store(Request $request)
     {
+        if (auth()->user()->user_type === 'customer') {
+            $request->merge([
+                'customer_id' => auth()->id(),
+            ]);
+        }
         $data = $request->validate([
             'date'         => ['required', 'date'],
             'start_time'   => ['required', 'date_format:H:i'],
             'end_time'     => ['required', 'date_format:H:i', 'after:start_time'],
             'service'      => ['required', 'string', 'max:255'],
             'customer_id'  => ['required', 'exists:users,id'],
-            'employee_id'  => ['required', 'exists:users,id'],
+            'employee_id'  => ['nullable', 'exists:users,id'],
             'status'       => ['nullable', 'in:open,booked,completed,canceled'],
         ]);
 

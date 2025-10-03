@@ -42,6 +42,7 @@ const NAV_ITEMS: Record<string, NavItem> = {
     shifts:     { title: 'Shifts',     href: '/shifts',    icon: LayoutGrid },
     employees:  { title: 'Employees',  href: '/employees', icon: Users },
     customers:  { title: 'Customers',  href: '/customers', icon: User },
+
 };
 
 type UserRole = 'admin' | 'employee' | 'customer' | string;

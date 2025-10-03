@@ -20,9 +20,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Customers
     Route::get('/customers', [\App\Http\Controllers\CustomerController::class, 'index'])->name('customers.index');
-    Route::get('/customers/create', [\App\Http\Controllers\CustomerController::class, 'create'])->name('customers.create');
+//    Route::get('/customers/create', [\App\Http\Controllers\CustomerController::class, 'create'])->name('customers.create');
     Route::post('/customers', [\App\Http\Controllers\CustomerController::class, 'store'])->name('customers.store');
-    Route::get('/customers/{user}/edit', [\App\Http\Controllers\CustomerController::class, 'edit'])->name('customers.edit');
+//    Route::get('/customers/{user}/edit', [\App\Http\Controllers\CustomerController::class, 'edit'])->name('customers.edit');
     Route::put('/customers/{user}', [\App\Http\Controllers\CustomerController::class, 'update'])->name('customers.update');
     Route::delete('/customers/{user}', [\App\Http\Controllers\CustomerController::class, 'destroy'])->name('customers.destroy');
     // Shifts

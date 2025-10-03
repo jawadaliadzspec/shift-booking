@@ -211,6 +211,8 @@ const onClearFilters = () => {
                 </DialogHeader>
                 <ShiftForm
                     mode="create"
+                    :role="userRole"
+                    :current-user-id="page.props.auth.user?.id"
                     :customers="props.customers"
                     :employees="props.employees"
                     @cancel="showCreate = false"
@@ -229,6 +231,8 @@ const onClearFilters = () => {
                 <ShiftForm
                     v-if="selected"
                     mode="edit"
+                    :role="userRole"
+                    :current-user-id="page.props.auth.user?.id"
                     :shift="selected"
                     :customers="props.customers"
                     :employees="props.employees"

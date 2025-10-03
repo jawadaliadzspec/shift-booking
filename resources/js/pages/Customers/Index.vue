@@ -46,6 +46,7 @@ const onSaved = () => {
     showEdit.value = false;
     selected.value = null;
     router.reload({ only: ['customers'] });
+
 };
 
 // Delete confirm state

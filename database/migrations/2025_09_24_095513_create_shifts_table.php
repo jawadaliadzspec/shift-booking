@@ -17,7 +17,7 @@ return new class extends Migration
             $table->time('start_time');
             $table->time('end_time');
             $table->string('service');
-            $table->foreignId('customer_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('employee_id')->nullable()->change();
             $table->foreignId('employee_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
